@@ -38,7 +38,10 @@ class Document:
         This should perform the keyword comparison logic used by the game
         search flow.
         """
-        pass
+
+        if keyword in self.unlock_keywords:
+            return True
+        return False
 
     def get_evidence_by_id(self, evidence_id: str) -> EvidenceItem | None:
         """Return the matching evidence item from this document, if present.
