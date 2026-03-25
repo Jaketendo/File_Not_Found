@@ -49,7 +49,12 @@ class Document:
         This should help the engine find evidence inside a document without
         duplicating lookup logic in multiple places.
         """
-        pass
+        i=0
+        while i < len(self.evidence_items):
+            if evidence_id == self.evidence_items[i.evidence_id]:
+                return self.evidence_items[i]
+            i+=1
+
 
 
 @dataclass(slots=True)
@@ -77,7 +82,12 @@ class CaseData:
         This should provide one standard way to retrieve a document from the
         case data.
         """
-        pass
+        i=0
+        while i < len(self.documents):
+            if document_id == self.documents[i]:
+                return self.doucuments[i]
+            i+= 1
+
 
 
 @dataclass(slots=True)
@@ -93,12 +103,6 @@ class GameState:
     game_over: bool = False
     player_won: bool = False
 
-    def mark_keyword_used(self, keyword: str) -> None:
-        """Store a keyword in the set of already-used keywords.
-
-        This should update the game state after a search attempt.
-        """
-        pass
 
     def unlock_document(self, document_id: str) -> None:
         """Mark a document as unlocked in the current game state.
@@ -106,11 +110,16 @@ class GameState:
         This should update both the state tracking and any related document
         status if needed.
         """
-        pass
+        Document.is_unlocked[document_id] = True
 
     def collect_evidence(self, evidence_id: str) -> None:
         """Add an evidence item to the player's collected evidence set.
 
         This should prevent duplicates and keep state updates in one place.
         """
-        pass
+        i=0
+        while i < len(self.collected_evidence_ids):
+            if evidence_id == self.collected_evidence_ids[i]:
+                return
+            i+=1
+        self.collected_evidence_ids += evidence_id
