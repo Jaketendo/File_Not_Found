@@ -44,7 +44,8 @@ def build_starting_keywords() -> list[str]:
 
     These keywords should unlock the first wave of documents.
     """
-    pass
+    return []
+
 
 
 def build_documents() -> list[Document]:
@@ -53,7 +54,9 @@ def build_documents() -> list[Document]:
     Each document should include its unlock keywords, discovered keywords,
     visible text, and evidence items.
     """
-    pass
+
+    return [Document.Auto_Repair_Shop_Receipt, Document.Accident_Timeline_Report, Document.Location_Data_Summary, Document.Insurance_Claim, Document.Police_Report, Document.Witness_Statement, Document.Traffic_Camera_Footage, Document.Car_Registration_Database]
+
 
 
 def build_solution() -> CaseSolution:
@@ -76,3 +79,4 @@ def build_evidence_item(
     This helper should keep evidence creation consistent across the data file.
     """
     pass
+
