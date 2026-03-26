@@ -123,3 +123,29 @@ class GameState:
                 return
             i+=1
         self.collected_evidence_ids += evidence_id
+
+#Document building for case 1
+Auto_Repair_Shop_Receipt = Document("001", "Auto Repair Shop Receipt",
+"Repair order #88421 from Mercer Auto Body shows a same-day walk-in service request for a 2017 TOHOTA PRIS, plate JT7KQ4, on the morning following the collision. The receipt lists replacement of the front-right headlight assembly, bumper clip repair, and paint touch-up for damage described as \"sudden front-corner impact.\" Customer name on file is Tyler Smith. Payment was made by personal debit card at 8:14 AM.",
+["auto_repair_records"],["accident_timeline"],
+["Repair receipt is tied to plate JT7KQ4", "Vehicle on receipt is a 2017 TOHOTA PRIUS", "Repairs include the front-right headlight assembly", "Customer listed is Tyler Smith", "Repair happened the morning after the crash at 8:14 AM"],
+False)
+
+Accident_Timeline_Report = Document("002", "Accident Timeline Report",
+"Compiled timeline of known events related to the hit-and-run investigation:\n- 8:57 PM: collision reported at Fulton and Mercer\n" \
+"- 8:58 PM to 9:01 PM: witness observes damaged dark blue sedan leaving area\n- 9:08 PM: traffic camera C-14 records a dark blue vehicle with front-right damage traveling east on Mercer Avenue\n" \
+"- Next day, 8:14 AM: repair order opened for a matching vehicle with front-right damage\n\nThe timing of the collision, witness observations, camera footage, and repair activity strongly suggests continuity between the same vehicle and owner.",
+["accident_timeline"], ["auto_repair_records", "witness_testimony"], 
+["Camera footage happened shortly after the collision", "Witness and camera observations fit the same vehicle",
+ "Repair activity occurred the next morning", "Timeline links the crash, escape, and repair into one sequence"], 
+ True)
+
+Location_Data_Summary = Document("003", "Location Data Summary",
+"Cell location summary for Tyler Smith's phone shows movement consistent with the route taken by the suspect vehicle. At 8:56 PM, the device was active near Fulton Street. At 9:09 PM, it pinged a tower covering Mercer Avenue southbound, matching the direction seen in traffic footage. The next morning, the same device was recorded near Mercer Auto Body shortly before the repair receipt timestamp. No conflicting location activity was recorded during the relevant window.",
+["witness_testimony"], ["auto repair records"], ["Tyler Smith's phone was near the crash area at 8:56 PM", "Phone movement matches the escape route seen on camera", "Phone was near Mercer Auto Body before the repair visit", "No conflicting location data appears during the relevant time period"],
+False)
+
+Insurance_Claim = Document("004", "Insurance Claim", 
+"Insurance claim filed by Tyler Smith at 10:42 AM on the day after the collision reports damage to a 2017 TOHOTA PRIS. In the statement, Smith claims the vehicle was damaged after \"striking an animal\" late the previous night. Claim notes list damage to the front-right headlight area and bumper corner. The timing and damage description are consistent with the hit-and-run investigation, but the explanation does not match the collision evidence gathered from the scene.",
+["vehicle registration database"], ["auto repair records"], ["Insurance claim was filed by Tyler Smith", "Claim vehicle is a 2017 TOHOTA PRIUS", "Claim describes damage to the front-right headlight area", "Smith gave an explanation that conflicts with the investigation evidence",],
+False)
