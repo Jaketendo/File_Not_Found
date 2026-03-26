@@ -29,8 +29,7 @@ def build_intro_text() -> str:
     This should briefly explain the case and tell the player what they are
     trying to prove.
     """
-    pass
-
+    return "Welcome to FileNotFound\nA document search mystery game\n\n\n\nMade by Jacob, Joshua, and Abdelrahman"
 
 def build_suspects() -> list[str]:
     """Return the list of suspects for the demo case.
