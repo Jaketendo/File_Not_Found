@@ -149,3 +149,20 @@ Insurance_Claim = Document("004", "Insurance Claim",
 "Insurance claim filed by Tyler Smith at 10:42 AM on the day after the collision reports damage to a 2017 TOHOTA PRIS. In the statement, Smith claims the vehicle was damaged after \"striking an animal\" late the previous night. Claim notes list damage to the front-right headlight area and bumper corner. The timing and damage description are consistent with the hit-and-run investigation, but the explanation does not match the collision evidence gathered from the scene.",
 ["vehicle registration database"], ["auto repair records"], ["Insurance claim was filed by Tyler Smith", "Claim vehicle is a 2017 TOHOTA PRIUS", "Claim describes damage to the front-right headlight area", "Smith gave an explanation that conflicts with the investigation evidence",],
 False)
+
+Police_Report = Document("005", "Police Report", 
+"At approximately 8:57 PM, officers responded to a reported hit-and-run collision at the intersection of Fulton Street and Mercer Avenue. The victim stated that a dark-colored sedan struck their vehicle while making a fast right turn and fled the scene without stopping. Debris recovered from the roadway included fragments of a front-right headlight housing and dark blue paint transfer. No immediate plate information was obtained at the scene, but nearby traffic cameras and witness interviews were flagged for follow-up review.",
+["accident timeline"], ["witness testimony", "traffic camera footage"], ["Collision occurred at 8:57 PM at Fulton and Mercer", "Debris indicates damage to a front-right headlight", "Dark blue paint transfer was found at the scene", "Traffic cameras and witnesses were identified as leads"],
+False)
+
+Witness_Statement = Document("006", "Witness Statement", "Witness Emily Carter reported hearing the crash and seeing a dark blue TOHOTA PRIS speed away from the intersection moments later. She stated the vehicle had visible damage near the front-right headlight and remembered the driver looked like a man wearing a dark jacket. She was unable to identify the full plate number, but recalled seeing the characters \"7KQ\" before the car turned south onto Mercer Avenue.",
+["witness testimony"], ["traffic camera footage", "vehicle registration database"], ["Witness saw a dark blue TOHOTA PRIS leave the scene", "Witness noticed front-right headlight damage", "Witness remembered the partial plate \"7KQ\"", "Witness stated the driver appeared to be a man in a dark jacket"],
+False)
+
+Traffic_Camera_Footage = Document("007", "Traffic Camera Footage", "City traffic camera C-14 captured a dark blue sedan traveling east on Mercer Avenue at 9:08 PM, approximately 11 seconds after the reported collision at the Fulton and Mercer intersection. The footage shows visible damage to the vehicle's front-right headlight housing and a partial license plate reading __7KQ_. The driver does not stop and continues southbound out of frame. Vehicle shape and trim are consistent with a 2017 TOHOTA PRIUS.",
+["traffic camera footage"], ["vehicle registration database", "accident timeline"], ["Camera footage shows the suspect vehicle leaving the scene", "Partial plate visible: __7KQ_", "Front-right headlight damage visible", "Vehicle appears to be a dark blue 2017 TOHOTA PRIUS"],
+False)
+
+Car_Registration_Database = Document("008", "Car Registration Database", "A filtered search of the vehicle registration database was performed using the partial plate pattern __7KQ_, vehicle color dark blue, and model family TOHOTA PRIS. Only one local registration matched all available criteria: 2017 TOHOTA PRIS, plate JT7KQ4, registered to Tyler Smith, address 1148 Pine Hollow Drive. Registration status is active, and the recorded vehicle color matches the traffic camera footage.",
+["vehicle registration database"], ["auto repair records", "witness testimony"], ["Registration links plate JT7KQ4 to Tyler Smith", "Registered vehicle is a 2017 TOHOTA PRIUS", "Vehicle color matches the camera footage", "Registration is the only local match for the observed plate pattern"],
+False)
