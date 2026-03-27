@@ -126,14 +126,14 @@ class GameState:
 
 
 #Evidence Items for case 1
-auto_repair_records = EvidenceItem("001", "auto_repair_records", "Repair receipt is tied to plate JT7KQ4, The vehicle on receipt is a 2017 TOYOTA PRIUS. Customer listed is Tyler Smith. Repaired the front right headligh assembly the morning after the crash at 8:14 AM", "001", )
+auto_repair_records = EvidenceItem("001", "auto_repair_records", "Repair receipt is tied to plate JT7KQ4, The vehicle on receipt is a 2017 TOYOTA PRIUS. Customer listed is Tyler Smith. Repaired the front right headligh assembly the morning after the crash at 8:14 AM", "001", True)
 traffic_camera_footage = EvidenceItem("002", "traffic_camera_footage", "Camera footage happened shortly after the collision that shows a dark blue 2017 TOYOTA PRIUS driving from the scene with damage to its front right end and a partial plate of __7KQ_. After police arrived on scene they identified the camera as a potential lead.", "007")
-witness_testimony = EvidenceItem("003", "witness_testimony", "Witness described a dark blue 2017 TOYOTA PRIUS driving away from the crash with a damage front right end. Witness remembered the partial plate \"7KQ\". Witness stated the driver appeared to be a man in a dark jacket. After police arrived on scene a witness was identified as a lead", "006")
+witness_testimony = EvidenceItem("003", "witness_testimony", "Witness described a dark blue 2017 TOYOTA PRIUS driving away from the crash with a damage front right end. Witness remembered the partial plate \"7KQ\". Witness stated the driver appeared to be a man in a dark jacket. After police arrived on scene a witness was identified as a lead", "006", True)
 accident_timeline = EvidenceItem("004", "accident_timeline", "Timeline links the crash, escape, and repair into one sequence", "002")
-location_data_summary = EvidenceItem("005", "location_data_summary", "Tyler Smith's phone was near the crash area at 8:56 PM. Phone movement matches the escape route seen on camera. Phone location was near Mercer Auto Body before the repair visit. No other conflicting location data appears during the relevant time period.", "003")
+location_data_summary = EvidenceItem("005", "location_data_summary", "Tyler Smith's phone was near the crash area at 8:56 PM. Phone movement matches the escape route seen on camera. Phone location was near Mercer Auto Body before the repair visit. No other conflicting location data appears during the relevant time period.", "003", True)
 insurance_claim = EvidenceItem("006", "insurance_claim", "Insurance claim was filed by Tyler Smith for a 2017 TOYOTA PRIUS. Claim describes damage to the front-right headlight area. Smith gave an explanation that conflicts with the investigation evidence", "004")
 police_report = EvidenceItem("007", "police_report", "Collision occurred at 8:57 PM at Fulton and Mercer. Debris indicates damage to a front-right headlight. Dark blue paint transfer was found at the scene.", "005")
-vehicle_registration_database = EvidenceItem("008", "vehicle_registration_database", "Registration links plate JT7KQ4 to Tyler Smith. Registered vehicle is a 2017 TOYOTA PRIUS. Vehicle color matches the camera footage. Registration is the only local match for the observed plate pattern.", "008")
+vehicle_registration_database = EvidenceItem("008", "vehicle_registration_database", "Registration links plate JT7KQ4 to Tyler Smith. Registered vehicle is a 2017 TOYOTA PRIUS. Vehicle color matches the camera footage. Registration is the only local match for the observed plate pattern.", "008", True)
 
 
 #Document building for case 1
@@ -177,3 +177,8 @@ False)
 Car_Registration_Database = Document("008", "Car Registration Database", "A filtered search of the vehicle registration database was performed using the partial plate pattern __7KQ_, vehicle color dark blue, and model family TOYOTA PRIUS. Only one local registration matched all available criteria: 2017 TOYOTA PRIUS, plate JT7KQ4, registered to Tyler Smith, address 1148 Pine Hollow Drive. Registration status is active, and the recorded vehicle color matches the traffic camera footage.",
 ["vehicle_registration_database"], ["auto_repair_records", "witness_testimony"], [vehicle_registration_database],
 False)
+
+Crash_Case_Solution = CaseSolution("Tyler Smith", ["auto_repair_records", "location_data_summary", "vehicle_registration_database"])
+
+Case1 = CaseData("Crash", [], ["Tyler Smith"], [Car_Registration_Database, Traffic_Camera_Footage, Witness_Statement, Police_Report, Insurance_Claim, Location_Data_Summary, Accident_Timeline_Report, Auto_Repair_Shop_Receipt],
+[], Crash_Case_Solution)
