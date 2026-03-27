@@ -99,9 +99,10 @@ def display_status(state: GameState) -> None:
 
     _section("Unlocked Documents")
     if state.unlocked_document_ids:
+        # Scan documents directly — avoids depending on get_document_by_id
+        doc_title_map = {d.document_id: d.title for d in state.case_data.documents}
         for doc_id in sorted(state.unlocked_document_ids):
-            doc = state.case_data.get_document_by_id(doc_id)
-            label = doc.title if doc else doc_id
+            label = doc_title_map.get(doc_id, doc_id)
             print(f"    [{doc_id}]  {label}")
     else:
         print("    (no documents unlocked yet)")
@@ -183,13 +184,27 @@ def prompt_keyword() -> str:
         return ""
 
 
-def prompt_document_id() -> str:
-    """Ask the player which document they want to open."""
-    print("  Enter document ID:")
+def prompt_document_choice(documents: list) -> str:
+    """Show a numbered list of documents and return the chosen document_id.
+
+    The player picks a number — no IDs to memorize or mistype.
+    Returns empty string if the player cancels or enters invalid input.
+    """
+    print()
+    for i, doc in enumerate(documents, start=1):
+        print(f"    {i}.  {doc.title}")
+    print()
+    print(f"  Enter a number (1-{len(documents)}) or press Enter to cancel:")
     try:
-        return input("  > ").strip()
+        raw = input("  > ").strip()
     except (EOFError, KeyboardInterrupt):
         return ""
+    if not raw:
+        return ""
+    if not raw.isdigit() or not (1 <= int(raw) <= len(documents)):
+        print(f"\n  [!]  Please enter a number between 1 and {len(documents)}.\n")
+        return ""
+    return documents[int(raw) - 1].document_id
 
 
 def prompt_evidence_ids() -> list[str]:
