@@ -1,4 +1,4 @@
-"""Tests for cli.py — File Not Found terminal demo.
+"""Tests for cli.py — File Not Found.
 
 Run with:
     python -m unittest test_cli -v
