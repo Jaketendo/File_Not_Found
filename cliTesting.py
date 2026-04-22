@@ -12,11 +12,9 @@ Coverage:
 
 from __future__ import annotations
 
-import sys
 import unittest
 from unittest.mock import patch
 
-sys.path.insert(0, "/home/claude")
 
 from models import CaseData, CaseSolution, Document, EvidenceItem, GameState
 import cli
