@@ -1,4 +1,4 @@
-"""Tests for main.py — File Not Found 
+"""Tests for main.py — File Not Found .
 
 Run with:
     python -m unittest test_main -v
@@ -10,11 +10,10 @@ Coverage:
 
 from __future__ import annotations
 
-import sys
 import unittest
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, "/home/claude")
+
 
 from models import CaseData, CaseSolution, Document, EvidenceItem, GameState
 import main

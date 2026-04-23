@@ -1,4 +1,4 @@
-"""Tests for cli.py — File Not Found terminal demo.
+"""Tests for cli.py — File Not Found.
 
 Run with:
     python -m unittest test_cli -v
@@ -12,11 +12,9 @@ Coverage:
 
 from __future__ import annotations
 
-import sys
 import unittest
 from unittest.mock import patch
 
-sys.path.insert(0, "/home/claude")
 
 from models import CaseData, CaseSolution, Document, EvidenceItem, GameState
 import cli
