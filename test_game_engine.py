@@ -7,7 +7,7 @@ import unittest
 
 from game_engine import (
     GameEngine,
-    _as_value_list,
+    _as_iterable,
     _clean_text,
     _find_matching_string,
     _get_document_label,
@@ -311,7 +311,10 @@ class GameEngineTests(unittest.TestCase):
         result = self.engine.search_keyword("witness testimony")
 
         self.assertEqual(result.status, "success")
-        self.assertEqual({document.document_id for document in result.unlocked_documents}, {"DOC-5"})
+        self.assertEqual(
+            {document.document_id for document in result.unlocked_documents},
+            {"DOC-5"},
+        )
         self.assertNotIn("New keywords discovered:", result.message)
         self.assertIn("Unlocked 1 new document", result.message)
 
@@ -335,7 +338,12 @@ class GameEngineTests(unittest.TestCase):
 
         self.assertEqual(
             self.engine.get_available_keywords(include_used=True),
-            ["accident timeline", "auto repair records", "traffic camera footage", "witness testimony"],
+            [
+                "accident timeline",
+                "auto repair records",
+                "traffic camera footage",
+                "witness testimony",
+            ],
         )
 
     def test_collect_evidence_rejects_empty_invalid_and_duplicate_selection(self) -> None:
@@ -449,7 +457,9 @@ class GameEngineTests(unittest.TestCase):
     def test_wrappers_collect_submit_and_game_over_work_together(self) -> None:
         self.unlock_all_key_documents()
 
-        success, collect_message = collect_evidence_from_document_wrapper(self.state, "DOC-2", ["E2"])
+        success, collect_message = collect_evidence_from_document_wrapper(
+            self.state, "DOC-2", ["E2"]
+        )
         self.assertTrue(success)
         self.assertEqual(collect_message, "Collected evidence: E2.")
 
@@ -460,9 +470,9 @@ class GameEngineTests(unittest.TestCase):
         self.assertIn("required evidence is missing", submit_message)
 
     def test_private_helper_functions_cover_input_normalization_paths(self) -> None:
-        self.assertEqual(_as_value_list(None), [])
-        self.assertEqual(_as_value_list("E1"), ["E1"])
-        self.assertEqual(_as_value_list({"b", "A"}), ["A", "b"])
+        self.assertEqual(_as_iterable(None), [])
+        self.assertEqual(_as_iterable("E1"), ["E1"])
+        self.assertEqual(_as_iterable({"b", "A"}), ["A", "b"])
         self.assertEqual(_clean_text(None), "")
         self.assertEqual(_clean_text("  a   b "), "a b")
         self.assertEqual(_ordered_unique_strings([" A ", "a", "", "B"]), ["A", "B"])
