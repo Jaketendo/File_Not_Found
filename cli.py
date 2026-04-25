@@ -1,4 +1,4 @@
-"""Command-line interface helpers for the File Not Found demo.
+"""Command-line interface helpers for the File Not Found 
 
 This module handles all printing and user input for the terminal demo.
 Display logic lives here so the engine stays focused on game rules.
@@ -46,6 +46,27 @@ def _wrap(text: str, indent: str = "  ") -> None:
 
 
 # ── Display functions ─────────────────────────────────────────────────────────
+
+
+
+def display_case_select(case_names: list[str]) -> int:
+    """Show a numbered case selection menu and return the chosen index."""
+    print(f"\n{THICK_DIVIDER}")
+    print("  FILE NOT FOUND  |  SELECT A CASE")
+    print(THICK_DIVIDER)
+    print()
+    for i, name in enumerate(case_names, start=1):
+        print(f"    {i}.  {name}")
+    print()
+    print(f"  Enter a number (1-{len(case_names)}):")
+    while True:
+        try:
+            raw = input("  > ").strip()
+        except (EOFError, KeyboardInterrupt):
+            return 0
+        if raw.isdigit() and 1 <= int(raw) <= len(case_names):
+            return int(raw) - 1
+        print(f"  [!]  Please enter a number between 1 and {len(case_names)}.")
 
 
 def display_welcome(case_data: CaseData) -> None:
@@ -207,18 +228,35 @@ def prompt_document_choice(documents: list) -> str:
     return documents[int(raw) - 1].document_id
 
 
-def prompt_evidence_ids() -> list[str]:
-    """Ask the player which evidence items they want to collect.
+def prompt_evidence_ids(evidence_items: list | None = None) -> list[str]:
+    """Show a numbered list of evidence items and return chosen IDs.
 
-    Accepts comma-separated or space-separated evidence IDs.
+    Falls back to typed input if no evidence_items list is provided.
     """
-    print("  Enter evidence ID(s) to collect (separate multiple with commas):")
+    if not evidence_items:
+        print("  (no evidence items available)")
+        return []
+
+    print()
+    for i, item in enumerate(evidence_items, start=1):
+        tag = "  [KEY]" if item.is_key_evidence else ""
+        print(f"    {i}.  {item.label}{tag}")
+        print(f"         {item.description}")
+    print()
+    print(f"  Enter number(s) to collect (e.g. 1 or 1,2) or press Enter to cancel:")
     try:
         raw = input("  > ").strip()
     except (EOFError, KeyboardInterrupt):
         return []
-    parts = [p.strip() for p in raw.replace(",", " ").split() if p.strip()]
-    return parts
+    if not raw:
+        return []
+    selected = []
+    for part in raw.replace(",", " ").split():
+        if part.isdigit() and 1 <= int(part) <= len(evidence_items):
+            selected.append(evidence_items[int(part) - 1].evidence_id)
+        else:
+            print(f"\n  [!]  '{part}' is not a valid number, skipping.\n")
+    return selected
 
 
 def prompt_suspect(case_data: CaseData) -> str:
