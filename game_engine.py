@@ -1,9 +1,21 @@
-"""Game-state logic for the File Not Found terminal demo."""
+"""Core game flow for the File Not Found demo.
+
+Assumptions:
+- ``CaseData`` exposes ``intro_text``, ``suspects``, ``documents``,
+  ``starting_keywords``, and ``solution``.
+- ``Document`` exposes ``document_id``, ``title``, ``text``,
+  ``discovered_keywords``, and ``evidence_items``.
+- ``EvidenceItem`` exposes ``evidence_id``.
+
+The module keeps the current function-based API for easy integration with the
+rest of the skeleton, while also providing a ``GameEngine`` class with
+structured return values for cleaner CLI code.
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Iterable, Literal
+from typing import Any, Iterable, Literal
 
 from models import CaseData, Document, EvidenceItem, GameState
 from validation import (
@@ -15,6 +27,19 @@ from validation import (
     normalize_text,
     validate_submission,
 )
+
+_DOCUMENT_COLLECTION_ATTRS = ("documents", "docs")
+_DOCUMENT_ID_ATTRS = ("document_id", "doc_id", "id")
+_DOCUMENT_TITLE_ATTRS = ("title", "name", "label")
+_DOCUMENT_DISCOVERED_KEYWORD_ATTRS = (
+    "discovered_keywords",
+    "revealed_keywords",
+    "new_keywords",
+)
+_DOCUMENT_EVIDENCE_ATTRS = ("evidence_items", "evidence", "clues")
+_EVIDENCE_ID_ATTRS = ("evidence_id", "id")
+_INTRO_TEXT_ATTRS = ("intro_text", "summary", "description")
+_SUSPECT_COLLECTION_ATTRS = ("suspects", "people")
 
 SearchStatus = Literal[
     "success",
@@ -36,7 +61,7 @@ EvidenceStatus = Literal[
 
 @dataclass(slots=True)
 class SearchResult:
-    """Outcome of a keyword search."""
+    """Describe the outcome of one keyword search."""
 
     status: SearchStatus
     message: str
@@ -47,7 +72,7 @@ class SearchResult:
 
 @dataclass(slots=True)
 class EvidenceCollectionResult:
-    """Outcome of an evidence collection attempt."""
+    """Describe what happened when the player tried to collect evidence."""
 
     status: EvidenceStatus
     message: str
@@ -59,7 +84,7 @@ class EvidenceCollectionResult:
 
 @dataclass(slots=True, frozen=True)
 class CaseSubmission:
-    """Final suspect and evidence package sent to validation."""
+    """Represent the final suspect and evidence package sent for validation."""
 
     suspect_id: str
     evidence_ids: frozenset[str] = field(default_factory=frozenset)
@@ -67,7 +92,7 @@ class CaseSubmission:
 
 
 class GameEngine:
-    """Handles keyword search, document access, evidence, and submission."""
+    """Stateful controller for gameplay progression and validation."""
 
     def __init__(self, case_data: CaseData, state: GameState | None = None) -> None:
         self.case_data = case_data
@@ -75,24 +100,24 @@ class GameEngine:
 
     @classmethod
     def from_state(cls, state: GameState) -> GameEngine:
-        """Wrap an existing game state."""
+        """Build an engine instance around an existing game state."""
 
         return cls(state.case_data, state)
 
     def get_case_summary(self) -> str:
-        """Return the case intro text."""
+        """Return the intro text or summary for the active case."""
 
-        return _clean_text(self.case_data.intro_text)
+        return _clean_text(_read_attr(self.case_data, _INTRO_TEXT_ATTRS, default=""))
 
-    def get_suspects(self) -> list[str]:
-        """Return the case suspect list."""
+    def get_suspects(self) -> list[Any]:
+        """Return the current case suspect list."""
 
-        return list(self.case_data.suspects)
+        return _as_iterable(_read_attr(self.case_data, _SUSPECT_COLLECTION_ATTRS, default=[]))
 
     def get_available_keywords(self, include_used: bool = False) -> list[str]:
-        """Return known keywords, optionally including used ones."""
+        """Return known keywords, optionally including keywords already used."""
 
-        known_keywords = _ordered_unique_strings(self.state.available_keywords)
+        known_keywords = _ordered_unique_strings(getattr(self.state, "available_keywords", set()))
         if include_used:
             return sorted(known_keywords, key=normalize_text)
 
@@ -100,21 +125,21 @@ class GameEngine:
             [
                 keyword
                 for keyword in known_keywords
-                if _find_matching_string(self.state.used_keywords, keyword) is None
+                if not _find_matching_string(self.state.used_keywords, keyword)
             ],
             key=normalize_text,
         )
 
     def get_used_keywords(self) -> list[str]:
-        """Return the keywords already searched."""
+        """Return the keywords the player has already searched."""
 
         return sorted(
-            _ordered_unique_strings(self.state.used_keywords),
+            _ordered_unique_strings(getattr(self.state, "used_keywords", set())),
             key=normalize_text,
         )
 
     def search_keyword(self, keyword: str) -> SearchResult:
-        """Process one keyword search and update the state."""
+        """Process one keyword search and update the active game state."""
 
         cleaned_keyword = _clean_text(keyword)
         if not cleaned_keyword:
@@ -165,25 +190,26 @@ class GameEngine:
             self._unlock_document(document)
 
         discovered_keywords = self._add_discovered_keywords(new_documents)
+        message = self._build_search_message(new_documents, discovered_keywords)
         return SearchResult(
             status="success",
-            message=self._build_search_message(new_documents, discovered_keywords),
+            message=message,
             searched_keyword=searched_keyword,
             unlocked_documents=tuple(new_documents),
             discovered_keywords=tuple(discovered_keywords),
         )
 
     def get_unlocked_documents(self) -> list[Document]:
-        """Return every unlocked document."""
+        """Return every document the player has unlocked so far."""
 
         return [
             document
-            for document in self.case_data.documents
+            for document in _get_documents(self.case_data)
             if self._is_document_unlocked(document)
         ]
 
     def get_document(self, document_id: str | int) -> Document | None:
-        """Return an unlocked document by ID."""
+        """Return a document only when it exists and has been unlocked."""
 
         document = self._find_document(document_id)
         if document is None or not self._is_document_unlocked(document):
@@ -191,21 +217,21 @@ class GameEngine:
         return document
 
     def get_collected_evidence(self) -> list[EvidenceItem]:
-        """Return collected evidence in document order."""
+        """Return collected evidence items in case-data order."""
 
         collected_items: list[EvidenceItem] = []
-        for document in self.case_data.documents:
-            for evidence_item in document.evidence_items:
+        for document in _get_documents(self.case_data):
+            for evidence_item in _get_document_evidence_items(document):
                 if _find_matching_string(
                     self.state.collected_evidence_ids,
-                    evidence_item.evidence_id,
+                    _get_evidence_id(evidence_item),
                 ):
                     collected_items.append(evidence_item)
 
         return collected_items
 
     def collect_evidence(self, evidence_id: str | int) -> EvidenceCollectionResult:
-        """Collect one evidence item from any unlocked document."""
+        """Collect a single evidence item from the unlocked documents."""
 
         cleaned_evidence_id = _clean_text(evidence_id)
         if not cleaned_evidence_id:
@@ -222,12 +248,12 @@ class GameEngine:
                 invalid_evidence_ids=(cleaned_evidence_id,),
             )
 
-        canonical_evidence_id = evidence_item.evidence_id
+        canonical_evidence_id = _get_evidence_id(evidence_item)
         if _find_matching_string(self.state.collected_evidence_ids, canonical_evidence_id):
             return EvidenceCollectionResult(
                 status="already_collected",
                 message="That evidence item has already been collected.",
-                document_id=document.document_id,
+                document_id=_get_document_id(document),
                 already_collected_evidence_ids=(canonical_evidence_id,),
             )
 
@@ -235,7 +261,7 @@ class GameEngine:
         return EvidenceCollectionResult(
             status="success",
             message=f"Collected evidence: {canonical_evidence_id}.",
-            document_id=document.document_id,
+            document_id=_get_document_id(document),
             collected_evidence_ids=(canonical_evidence_id,),
         )
 
@@ -244,7 +270,7 @@ class GameEngine:
         document_id: str | int,
         evidence_ids: Iterable[str] | str,
     ) -> EvidenceCollectionResult:
-        """Collect one or more evidence items from a specific document."""
+        """Collect one or more evidence items from a specific unlocked document."""
 
         document = self._find_document(document_id)
         cleaned_document_id = _clean_text(document_id)
@@ -260,20 +286,20 @@ class GameEngine:
             return EvidenceCollectionResult(
                 status="locked_document",
                 message="You can only collect evidence from unlocked documents.",
-                document_id=document.document_id,
+                document_id=_get_document_id(document),
             )
 
-        requested_evidence_ids = _ordered_unique_strings(_as_value_list(evidence_ids))
+        requested_evidence_ids = _ordered_unique_strings(_as_iterable(evidence_ids))
         if not requested_evidence_ids:
             return EvidenceCollectionResult(
                 status="empty_selection",
                 message="Select at least one evidence item.",
-                document_id=document.document_id,
+                document_id=_get_document_id(document),
             )
 
         evidence_lookup = {
-            normalize_text(evidence_item.evidence_id): evidence_item.evidence_id
-            for evidence_item in document.evidence_items
+            normalize_text(_get_evidence_id(evidence_item)): _get_evidence_id(evidence_item)
+            for evidence_item in _get_document_evidence_items(document)
         }
 
         invalid_evidence_ids = [
@@ -289,7 +315,7 @@ class GameEngine:
                     "The selected evidence does not belong to this document: "
                     f"{invalid_text}."
                 ),
-                document_id=document.document_id,
+                document_id=_get_document_id(document),
                 invalid_evidence_ids=tuple(invalid_evidence_ids),
             )
 
@@ -311,7 +337,7 @@ class GameEngine:
         return EvidenceCollectionResult(
             status=status,
             message=message,
-            document_id=document.document_id,
+            document_id=_get_document_id(document),
             collected_evidence_ids=tuple(collected_evidence_ids),
             already_collected_evidence_ids=tuple(already_collected_ids),
         )
@@ -321,10 +347,10 @@ class GameEngine:
         suspect_id: str,
         evidence_ids: Iterable[str] | str,
     ) -> CaseSubmission:
-        """Keep only collected evidence for the final submission."""
+        """Prepare the final suspect and evidence package for validation."""
 
         cleaned_suspect_id = _clean_text(suspect_id)
-        requested_evidence_ids = _ordered_unique_strings(_as_value_list(evidence_ids))
+        requested_evidence_ids = _ordered_unique_strings(_as_iterable(evidence_ids))
 
         accepted_evidence_ids: list[str] = []
         rejected_evidence_ids: list[str] = []
@@ -346,7 +372,7 @@ class GameEngine:
         suspect_id: str,
         evidence_ids: Iterable[str] | str,
     ) -> ValidationResult:
-        """Validate the final accusation and lock in the game result."""
+        """Validate the final accusation and store the final game outcome."""
 
         submission = self.build_submission(suspect_id, evidence_ids)
         result = validate_submission(
@@ -368,26 +394,36 @@ class GameEngine:
         return result
 
     def is_game_over(self) -> bool:
-        """Check whether the case has already been submitted."""
+        """Return True when the current game has already ended."""
 
-        return bool(self.state.game_over)
+        return bool(getattr(self.state, "game_over", False))
 
     def _mark_keyword_used(self, keyword: str) -> None:
+        """Store a searched keyword in the game state."""
+
         canonical_keyword = _find_matching_string(self.state.available_keywords, keyword)
         self.state.used_keywords.add(canonical_keyword or _clean_text(keyword))
 
     def _unlock_document(self, document: Document) -> None:
-        self.state.unlocked_document_ids.add(document.document_id)
+        """Mark a document as unlocked in both state and document data."""
+
+        document_id = _get_document_id(document)
+        if document_id:
+            self.state.unlocked_document_ids.add(document_id)
         if hasattr(document, "is_unlocked"):
             document.is_unlocked = True
 
     def _collect_evidence(self, evidence_id: str) -> None:
+        """Store an evidence item in the player's collected set."""
+
         self.state.collected_evidence_ids.add(_clean_text(evidence_id))
 
     def _add_discovered_keywords(self, documents: list[Document]) -> list[str]:
+        """Add new keywords revealed by newly unlocked documents."""
+
         discovered_keywords: list[str] = []
         for document in documents:
-            for keyword in document.discovered_keywords:
+            for keyword in _get_document_discovered_keywords(document):
                 cleaned_keyword = _clean_text(keyword)
                 if not cleaned_keyword:
                     continue
@@ -399,23 +435,30 @@ class GameEngine:
         return discovered_keywords
 
     def _find_document(self, document_id: str | int) -> Document | None:
+        """Return the matching document from the case data, if present."""
+
         normalized_document_id = normalize_text(_clean_text(document_id))
-        for document in self.case_data.documents:
-            if normalize_text(document.document_id) == normalized_document_id:
+        for document in _get_documents(self.case_data):
+            if normalize_text(_get_document_id(document)) == normalized_document_id:
                 return document
         return None
 
     def _is_document_unlocked(self, document: Document) -> bool:
-        return _find_matching_string(self.state.unlocked_document_ids, document.document_id) is not None
+        """Return True when a document has been unlocked in the current state."""
+
+        document_id = _get_document_id(document)
+        return bool(_find_matching_string(self.state.unlocked_document_ids, document_id))
 
     def _find_unlocked_evidence(
         self,
         evidence_id: str,
     ) -> tuple[Document | None, EvidenceItem | None]:
+        """Return the unlocked document and evidence item for an evidence ID."""
+
         normalized_evidence_id = normalize_text(evidence_id)
         for document in self.get_unlocked_documents():
-            for evidence_item in document.evidence_items:
-                if normalize_text(evidence_item.evidence_id) == normalized_evidence_id:
+            for evidence_item in _get_document_evidence_items(document):
+                if normalize_text(_get_evidence_id(evidence_item)) == normalized_evidence_id:
                     return document, evidence_item
         return None, None
 
@@ -424,6 +467,8 @@ class GameEngine:
         new_documents: list[Document],
         discovered_keywords: list[str],
     ) -> str:
+        """Create a short user-facing message for a successful search."""
+
         document_labels = ", ".join(_get_document_label(document) for document in new_documents)
         if len(new_documents) == 1:
             message = f"Unlocked 1 new document: {document_labels}."
@@ -441,6 +486,8 @@ class GameEngine:
         collected_ids: list[str],
         already_collected_ids: list[str],
     ) -> tuple[str, EvidenceStatus]:
+        """Build the result message for an evidence collection attempt."""
+
         if collected_ids and already_collected_ids:
             collected_text = ", ".join(collected_ids)
             duplicate_text = ", ".join(already_collected_ids)
@@ -461,20 +508,22 @@ class GameEngine:
 
 
 def create_new_game(case_data: CaseData) -> GameState:
-    """Build a fresh game state."""
+    """Create and return a fresh game state for a new play session."""
 
-    state = GameState(
-        case_data=case_data,
-        available_keywords=set(_ordered_unique_strings(case_data.starting_keywords)),
+    starting_keywords = set(
+        _ordered_unique_strings(
+            _as_iterable(getattr(case_data, "starting_keywords", []))
+        )
     )
+    state = GameState(case_data=case_data, available_keywords=starting_keywords)
 
     initially_unlocked_documents: list[Document] = []
-    for document in case_data.documents:
+    for document in _get_documents(case_data):
         starts_unlocked = bool(getattr(document, "starts_unlocked", False))
         if hasattr(document, "is_unlocked"):
             document.is_unlocked = starts_unlocked
         if starts_unlocked:
-            state.unlocked_document_ids.add(document.document_id)
+            state.unlocked_document_ids.add(_get_document_id(document))
             initially_unlocked_documents.append(document)
 
     if initially_unlocked_documents:
@@ -484,26 +533,26 @@ def create_new_game(case_data: CaseData) -> GameState:
 
 
 def search_keyword(state: GameState, keyword: str) -> tuple[list[Document], str]:
-    """Search one keyword and return new documents plus a status message."""
+    """Process one keyword search and return new documents plus a status message."""
 
     result = GameEngine.from_state(state).search_keyword(keyword)
     return list(result.unlocked_documents), result.message
 
 
 def add_discovered_keywords(state: GameState, documents: list[Document]) -> None:
-    """Add keywords revealed by newly unlocked documents."""
+    """Add new keywords revealed by newly unlocked documents."""
 
     GameEngine.from_state(state)._add_discovered_keywords(documents)
 
 
 def get_unlocked_documents(state: GameState) -> list[Document]:
-    """Return all unlocked documents."""
+    """Return all documents currently unlocked by the player."""
 
     return GameEngine.from_state(state).get_unlocked_documents()
 
 
 def read_document(state: GameState, document_id: str) -> Document | None:
-    """Return an unlocked document by ID."""
+    """Return the requested unlocked document, if it is available to read."""
 
     return GameEngine.from_state(state).get_document(document_id)
 
@@ -513,7 +562,7 @@ def collect_evidence_from_document(
     document_id: str,
     evidence_ids: list[str],
 ) -> tuple[bool, str]:
-    """Collect evidence from a specific document."""
+    """Collect one or more evidence items from a document."""
 
     result = GameEngine.from_state(state).collect_evidence_from_document(
         document_id,
@@ -527,35 +576,52 @@ def submit_case_answer(
     suspect_name: str,
     evidence_ids: set[str],
 ) -> tuple[bool, str]:
-    """Validate the player's final accusation."""
+    """Evaluate the player's suspect and evidence submission."""
 
     result = GameEngine.from_state(state).submit_case(suspect_name, evidence_ids)
     return result.is_win, result.message
 
 
 def is_game_over(state: GameState) -> bool:
-    """Check whether the current session has ended."""
+    """Return True when the current game has already ended."""
 
     return GameEngine.from_state(state).is_game_over()
 
 
-def _as_value_list(value: Iterable[str] | str | None) -> list[str]:
+def _read_attr(obj: Any, names: tuple[str, ...], default: Any = None) -> Any:
+    """Return the first matching attribute found on an object."""
+
+    for name in names:
+        if hasattr(obj, name):
+            return getattr(obj, name)
+    return default
+
+
+def _as_iterable(value: Any) -> list[Any]:
+    """Normalize supported collection-like values into a list."""
+
     if value is None:
         return []
     if isinstance(value, str):
         return [value]
     if isinstance(value, (set, frozenset)):
-        return sorted((str(item) for item in value), key=normalize_text)
-    return [str(item) for item in value]
+        return sorted(value, key=lambda item: normalize_text(str(item)))
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    return [value]
 
 
-def _clean_text(value: object) -> str:
+def _clean_text(value: Any) -> str:
+    """Return a trimmed string while preserving original character case."""
+
     if value is None:
         return ""
     return " ".join(str(value).strip().split())
 
 
-def _ordered_unique_strings(values: Iterable[object]) -> list[str]:
+def _ordered_unique_strings(values: Iterable[Any]) -> list[str]:
+    """Return cleaned strings in stable order without case-insensitive duplicates."""
+
     unique_values: list[str] = []
     seen: set[str] = set()
     for value in values:
@@ -568,7 +634,9 @@ def _ordered_unique_strings(values: Iterable[object]) -> list[str]:
     return unique_values
 
 
-def _find_matching_string(values: Iterable[object], target: object) -> str | None:
+def _find_matching_string(values: Iterable[Any], target: Any) -> str | None:
+    """Return the stored string that case-insensitively matches the target."""
+
     normalized_target = normalize_text(_clean_text(target))
     if not normalized_target:
         return None
@@ -581,9 +649,58 @@ def _find_matching_string(values: Iterable[object], target: object) -> str | Non
     return None
 
 
+def _get_documents(case_data: CaseData) -> list[Document]:
+    """Return all case documents using a small set of supported field names."""
+
+    return [
+        document
+        for document in _as_iterable(
+            _read_attr(case_data, _DOCUMENT_COLLECTION_ATTRS, default=[])
+        )
+        if document is not None
+    ]
+
+
+def _get_document_id(document: Document) -> str:
+    """Return a document identifier as a clean string."""
+
+    return _clean_text(_read_attr(document, _DOCUMENT_ID_ATTRS, default=""))
+
+
 def _get_document_label(document: Document) -> str:
-    title = _clean_text(document.title)
-    return title or _clean_text(document.document_id)
+    """Return a human-friendly label for a document."""
+
+    title = _clean_text(_read_attr(document, _DOCUMENT_TITLE_ATTRS, default=""))
+    return title or _get_document_id(document)
+
+
+def _get_document_discovered_keywords(document: Document) -> list[str]:
+    """Return the keywords revealed when a document is unlocked."""
+
+    raw_keywords = _read_attr(
+        document,
+        _DOCUMENT_DISCOVERED_KEYWORD_ATTRS,
+        default=[],
+    )
+    return _ordered_unique_strings(_as_iterable(raw_keywords))
+
+
+def _get_document_evidence_items(document: Document) -> list[EvidenceItem]:
+    """Return the evidence attached to a document."""
+
+    return [
+        evidence_item
+        for evidence_item in _as_iterable(
+            _read_attr(document, _DOCUMENT_EVIDENCE_ATTRS, default=[])
+        )
+        if evidence_item is not None
+    ]
+
+
+def _get_evidence_id(evidence_item: EvidenceItem) -> str:
+    """Return an evidence identifier as a clean string."""
+
+    return _clean_text(_read_attr(evidence_item, _EVIDENCE_ID_ATTRS, default=""))
 
 
 __all__ = [
