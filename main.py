@@ -1,4 +1,4 @@
-"""Entry point for the File Not Found terminal demo.
+"""Entry point for the File Not Found.
 
 Wires together case data, engine logic, and terminal UI.
 Stays small and focused on program startup and the main command loop.
@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sys
 
-from data import build_demo_case
+from data import build_demo_case, ALL_CASES
 from game_engine import (
     collect_evidence_from_document,
     create_new_game,
@@ -77,9 +77,9 @@ def handle_collect_action(state: GameState) -> None:
 
     cli.display_document(document)
 
-    evidence_ids = cli.prompt_evidence_ids()
+    evidence_ids = cli.prompt_evidence_ids(document.evidence_items)
     if not evidence_ids:
-        cli.print_info("No evidence IDs entered. Nothing collected.")
+        cli.print_info("No evidence selected. Nothing collected.")
         return
 
     success, message = collect_evidence_from_document(state, doc_id, evidence_ids)
@@ -121,7 +121,8 @@ def handle_submit_action(state: GameState) -> None:
 
 def run_game() -> None:
     """Start the demo and keep the command loop running until the game ends."""
-    case_data = build_demo_case()
+    case_index = cli.display_case_select(ALL_CASES)
+    case_data = build_demo_case(case_index)
     state = create_new_game(case_data)
 
     cli.display_welcome(case_data)
