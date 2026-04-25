@@ -62,10 +62,20 @@ class ModelsTests(unittest.TestCase):
 
         self.assertFalse(document.matches_keyword("repair receipt"))
 
+    def test_document_matches_keyword_requires_exact_case(self) -> None:
+        document = build_case_data().documents[0]
+
+        self.assertFalse(document.matches_keyword("Traffic Camera Footage"))
+
     def test_document_get_evidence_by_id_returns_match(self) -> None:
         document = build_case_data().documents[0]
 
         self.assertEqual(document.get_evidence_by_id("EV-1"), document.evidence_items[0])
+
+    def test_document_get_evidence_by_id_requires_exact_id(self) -> None:
+        document = build_case_data().documents[0]
+
+        self.assertIsNone(document.get_evidence_by_id("ev-1"))
 
     def test_document_get_evidence_by_id_returns_none_for_unknown_id(self) -> None:
         document = build_case_data().documents[0]
@@ -97,6 +107,17 @@ class ModelsTests(unittest.TestCase):
         state.mark_keyword_used("traffic camera footage")
 
         self.assertEqual(state.used_keywords, {"traffic camera footage"})
+
+    def test_game_state_defaults_start_empty_and_unfinished(self) -> None:
+        state = GameState(case_data=build_case_data())
+
+        self.assertEqual(state.available_keywords, set())
+        self.assertEqual(state.used_keywords, set())
+        self.assertEqual(state.unlocked_document_ids, set())
+        self.assertEqual(state.collected_evidence_ids, set())
+        self.assertIsNone(state.selected_suspect)
+        self.assertFalse(state.game_over)
+        self.assertFalse(state.player_won)
 
     def test_game_state_unlock_document_updates_state_and_document(self) -> None:
         case_data = build_case_data()
