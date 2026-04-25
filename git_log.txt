@@ -1,9 +1,11 @@
-a1b2c3d Initial commit - project setup
-b2c3d4e Added models and data structures
-c3d4e5f Implemented game engine logic
-d4e5f6g Added CLI interface and main loop
-e5f6g7h Added validation logic
-f6g7h8i Implemented multiple cases (Release 2)
-g7h8i9j Added unit tests for all modules
-h8i9j0k Generated coverage reports
-i9j0k1l Final documentation and release preparation 
+cbeda19 Create git_log.txt
+2aa0863 Update test_validation.py
+87de53c Update mainTesting.py
+be0239e Update game_engine.py
+1527b23 Update data_test.py
+b63fd98 Update cliTesting.py
+0df0dcc Update validation.py
+703b497 Update models.py
+f585ea3 Update main.py
+c579ca0 Update cli.py
+eb57fe3 Update data.py
