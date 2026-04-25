@@ -7,7 +7,7 @@ import unittest
 
 from game_engine import (
     GameEngine,
-    _as_value_list,
+    _as_iterable,
     _clean_text,
     _find_matching_string,
     _get_document_label,
@@ -460,9 +460,9 @@ class GameEngineTests(unittest.TestCase):
         self.assertIn("required evidence is missing", submit_message)
 
     def test_private_helper_functions_cover_input_normalization_paths(self) -> None:
-        self.assertEqual(_as_value_list(None), [])
-        self.assertEqual(_as_value_list("E1"), ["E1"])
-        self.assertEqual(_as_value_list({"b", "A"}), ["A", "b"])
+        self.assertEqual(_as_iterable(None), [])
+        self.assertEqual(_as_iterable("E1"), ["E1"])
+        self.assertEqual(_as_iterable({"b", "A"}), ["A", "b"])
         self.assertEqual(_clean_text(None), "")
         self.assertEqual(_clean_text("  a   b "), "a b")
         self.assertEqual(_ordered_unique_strings([" A ", "a", "", "B"]), ["A", "B"])

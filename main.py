@@ -22,6 +22,14 @@ from models import GameState
 import cli
 
 
+def _configure_console_encoding() -> None:
+    """Prefer UTF-8 output when the host stream supports reconfiguration."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
+
+
 # ── Action handlers ───────────────────────────────────────────────────────────
 
 
@@ -121,6 +129,7 @@ def handle_submit_action(state: GameState) -> None:
 
 def run_game() -> None:
     """Start the demo and keep the command loop running until the game ends."""
+    _configure_console_encoding()
     case_index = cli.display_case_select(ALL_CASES)
     case_data = build_demo_case(case_index)
     state = create_new_game(case_data)
